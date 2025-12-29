@@ -128,12 +128,11 @@ def load_data():
 mapping_df = load_data()
 
 if mapping_df is not None:
-    numeric_cols = ['rpt_time_turn', 'CVR']
+    target_columns = ['rpt_time_turn', 'CVR', 'CPA'] 
 
-    for col in numeric_cols:
+    for col in target_columns:
         if col in mapping_df.columns:
-            mapping_df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce')
-            
+            mapping_df[col] = pd.to_numeric(mapping_df[col].astype(str).str.replace(',', ''), errors='coerce')
             mapping_df[col] = mapping_df[col].fillna(0)
 
 # 3.2 session_state 및 기본값 설정
@@ -362,6 +361,7 @@ with tab2:
         width='stretch'
 
     )
+
 
 
 
