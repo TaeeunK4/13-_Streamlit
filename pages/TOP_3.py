@@ -16,6 +16,7 @@ from sklearn.preprocessing import RobustScaler
 import altair as alt
 from io import BytesIO
 import requests
+import gdown
 
 
 # =============================================================================
@@ -216,31 +217,40 @@ def load_model(cluster_n):
         return None
     
 # 5.2 해당 클러스터 불러오기    
-@st.cache_data  
-def load_df(cluster_n):
+@st.cache_data
+def load_df_gdown(cluster_n):
     cluster_file_ids = {
         0: '1poNHLx01sXmQ4EtkiE2FAL3doTdug-uX',
         1: '13eitQekyZ09qQGN7j3iaEq6YFR0vO9lh',
         2: '1Qeix85DvhQVQ5YRSa0vXRNoq_Xvmlp6Z',
         3: '1a8zYLAlXn8rXOGfASiyueRAE0FuFpxCU'
     }
+    
     file_id = cluster_file_ids.get(cluster_n)
-
-    if file_id:
-        try:
-            url = f'https://drive.google.com/uc?id={file_id}'
-            return pd.read_csv(url, encoding='utf-8', index_col=0)
-            
-        except Exception as e:
-            st.error(f"클러스터 {cluster_n} 파일을 불러오는 중 오류 발생: {e}")
-            return None
-    else:
-        st.error(f"클러스터 {cluster_n}번에 해당하는 파일 ID 설정이 없습니다.")
+    if not file_id:
         return None
+       
+    url = f'https://drive.google.com/uc?id={file_id}'
+    output_file = f'cluster_data_{cluster_n}.csv'
+    
+    try:
+        if not os.path.exists(output_file):
+            # quiet=True: 로그 출력 끄기, fuzzy=True: URL 인식 강화
+            gdown.download(url, output_file, quiet=True, fuzzy=True)
+        return pd.read_csv(output_file, 
+                           encoding='utf-8', 
+                           index_col=0, 
+                           thousands=',')
+                           
+    except Exception as e:
+        st.error(f"다운로드 실패: {e}")
+        return None
+       
+filtered_df = load_df_gdown(cluster_num)
 
 # 5.4 함수 호출 및 저장
 model = load_model(cluster_num)
-df = load_df(cluster_num)
+df = load_df_gdown(cluster_num)
 
 
 # =============================================================================
@@ -434,4 +444,5 @@ with tab2:
             <p style= 'color:gray; margin:2px 0;'>* CPA는 클릭당 비용이라 낮을수록 효율적</p>
             <p style= 'color:gray; margin:2px 0;'>→  <b>즉, 광고 효율 점수가 높을수록</b> 👍🏻</p>
     </div>          
+
     """, unsafe_allow_html=True)
