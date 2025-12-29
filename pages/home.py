@@ -132,9 +132,9 @@ if mapping_df is not None:
 
     for col in numeric_cols:
         if col in df.columns:
-            df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce')
+            mapping_df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce')
             
-            df[col] = df[col].fillna(0)
+            mapping_df[col] = mapping_df[col].fillna(0)
 
 # 3.2 session_state 및 기본값 설정
 industry = st.session_state.get('selected_industry', "음식")
@@ -362,6 +362,7 @@ with tab2:
         width='stretch'
 
     )
+
 
 
 
