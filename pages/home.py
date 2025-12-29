@@ -223,7 +223,7 @@ with col1:
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-title">TURN</div>
-        <div class="kpi-value">{time_turn_value:.2f}</div>
+        <div class="kpi-value">{float(time_turn_value):.2f}</div>
         <div class="kpi-sub">전환 수 평균</div>
     </div>
     """, unsafe_allow_html=True)
@@ -341,4 +341,5 @@ with tab2:
     st.dataframe(
         corr_matrix.style.background_gradient(cmap='RdYlBu', vmin=-1, vmax=1),
         width='stretch'
+
     )
