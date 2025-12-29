@@ -182,12 +182,32 @@ def load_df(cluster_n):
         2: '1Qeix85DvhQVQ5YRSa0vXRNoq_Xvmlp6Z',
         3: '1a8zYLAlXn8rXOGfASiyueRAE0FuFpxCU'
     }
+    
     file_id = cluster_file_ids.get(cluster_n)
 
     if file_id:
         try:
-            url = f'https://drive.google.com/uc?id={file_id}'
-            return pd.read_csv(url, encoding='utf-8', index_col=0)
+            URL = "https://docs.google.com/uc?export=download"
+            session = requests.Session()
+            
+            response = session.get(URL, params={'id': file_id}, stream=True)
+            
+            token = None
+            for key, value in response.cookies.items():
+                if key.startswith('download_warning'):
+                    token = value
+                    break
+            
+            if token:
+                params = {'id': file_id, 'confirm': token}
+                response = session.get(URL, params=params, stream=True)
+            
+            response.raise_for_status()
+
+            return pd.read_csv(BytesIO(response.content), 
+                               encoding='utf-8', 
+                               index_col=0, 
+                               thousands=',') 
             
         except Exception as e:
             st.error(f"클러스터 {cluster_n} 파일을 불러오는 중 오류 발생: {e}")
@@ -197,21 +217,6 @@ def load_df(cluster_n):
         return None
 
 filtered_df = load_df(cluster_num)
-
-if filtered_df is not None:
-    st.error("🚨 데이터 긴급 점검 (스크린샷 찍어서 보여주세요!)")
-    
-    # 1. 컬럼 이름 확인 (띄어쓰기나 대소문자 확인용)
-    st.write("### 1. 엑셀의 진짜 컬럼 이름들:")
-    st.write(filtered_df.columns.tolist()) 
-
-    # 2. KPI 데이터 상태 확인 (숫자인지 문자인지)
-    st.write("### 2. KPI 컬럼 데이터 타입:")
-    st.write(filtered_df.dtypes)
-
-    # 3. 데이터 내용 미리보기
-    st.write("### 3. 데이터 상위 5줄:")
-    st.dataframe(filtered_df.head())
 
 # =============================================================================
 # 5. KPI
@@ -367,6 +372,7 @@ with tab2:
         width='stretch'
 
     )
+
 
 
 
