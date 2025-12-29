@@ -176,46 +176,52 @@ else:
 cluster_num = int(cluster_num)
 
 # 4.4 클러스터 파일 불러오기
-@st.cache_data  
+@st.cache_data
 def load_df(cluster_n):
+    # 1. 클러스터별 파일 ID (기존 ID 그대로 사용)
     cluster_file_ids = {
         0: '1poNHLx01sXmQ4EtkiE2FAL3doTdug-uX',
         1: '13eitQekyZ09qQGN7j3iaEq6YFR0vO9lh',
-        2: '1Qeix85DvhQVQ5YRSa0vXRNoq_Xvmlp6Z',
+        2: '1Qeix85DvhQVQ5YRSa0vXRNoq_Xvmlp6Z', # 문제의 대용량 파일 (180MB)
         3: '1a8zYLAlXn8rXOGfASiyueRAE0FuFpxCU'
     }
     
     file_id = cluster_file_ids.get(cluster_n)
+    if not file_id:
+        st.error("파일 ID가 없습니다.")
+        return None
 
-    if file_id:
-        try:
-            URL = "https://docs.google.com/uc?export=download"
-            session = requests.Session()
+    try:
+        # 2. 대용량 파일 경고 우회 로직 (핵심!)
+        URL = "https://docs.google.com/uc?export=download"
+        session = requests.Session()
+        
+        # (1) 접속 시도
+        response = session.get(URL, params={'id': file_id}, stream=True)
+        
+        # (2) '바이러스 검사 경고' 토큰 찾기
+        token = None
+        for key, value in response.cookies.items():
+            if key.startswith('download_warning'):
+                token = value
+                break
+        
+        # (3) 토큰이 있으면 포함해서 진짜 다운로드 요청 ('확인' 버튼 누르는 효과)
+        if token:
+            params = {'id': file_id, 'confirm': token}
+            response = session.get(URL, params=params, stream=True)
             
-            response = session.get(URL, params={'id': file_id}, stream=True)
-            
-            token = None
-            for key, value in response.cookies.items():
-                if key.startswith('download_warning'):
-                    token = value
-                    break
-            
-            if token:
-                params = {'id': file_id, 'confirm': token}
-                response = session.get(URL, params=params, stream=True)
-            
-            response.raise_for_status()
+        response.raise_for_status() # 에러 체크
 
-            return pd.read_csv(BytesIO(response.content), 
-                               encoding='utf-8', 
-                               index_col=0, 
-                               thousands=',') 
-            
-        except Exception as e:
-            st.error(f"클러스터 {cluster_n} 파일을 불러오는 중 오류 발생: {e}")
-            return None
-    else:
-        st.error(f"클러스터 {cluster_n}번에 해당하는 파일 ID 설정이 없습니다.")
+        # 3. 데이터 읽기 (쉼표 제거 기능 포함)
+        # 180MB 파일을 메모리에서 읽습니다.
+        return pd.read_csv(BytesIO(response.content), 
+                           encoding='utf-8', 
+                           index_col=0, 
+                           thousands=',') # 숫자 안의 쉼표 자동 제거
+                           
+    except Exception as e:
+        st.error(f"파일 다운로드 실패 (Cluster {cluster_n}): {e}")
         return None
 
 filtered_df = load_df(cluster_num)
@@ -395,6 +401,7 @@ with tab2:
         width='stretch'
 
     )
+
 
 
 
