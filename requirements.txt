@@ -7,3 +7,4 @@ scikit-learn
 altair
 requests
 Pillow
+gdown
