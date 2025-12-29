@@ -131,7 +131,7 @@ if mapping_df is not None:
     numeric_cols = ['rpt_time_turn', 'CVR']
 
     for col in numeric_cols:
-        if col in df.columns:
+        if col in mapping_df.columns:
             mapping_df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce')
             
             mapping_df[col] = mapping_df[col].fillna(0)
@@ -362,6 +362,7 @@ with tab2:
         width='stretch'
 
     )
+
 
 
 
