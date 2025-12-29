@@ -10,6 +10,7 @@ from pathlib import Path
 import altair as alt
 import requests
 from io import BytesIO
+import gdown
 
 
 # =============================================================================
@@ -177,7 +178,7 @@ cluster_num = int(cluster_num)
 
 # 4.4 클러스터 파일 불러오기
 @st.cache_data
-def load_df_v2(cluster_n):
+def load_df_gdown(cluster_n):
     # 1. 파일 ID 매핑
     cluster_file_ids = {
         0: '1poNHLx01sXmQ4EtkiE2FAL3doTdug-uX',
@@ -190,47 +191,33 @@ def load_df_v2(cluster_n):
     if not file_id:
         return None
 
+    # 2. gdown을 이용한 다운로드 (바이러스 경고 자동 우회)
+    url = f'https://drive.google.com/uc?id={file_id}'
+    output_file = f'cluster_data_{cluster_n}.csv'
+    
     try:
-        # 2. 다운로드 URL 설정
-        URL = "https://docs.google.com/uc?export=download"
-        session = requests.Session()
+        # 파일이 이미 있으면 다시 받지 않음 (속도 향상)
+        if not os.path.exists(output_file):
+            # quiet=True: 로그 출력 끄기, fuzzy=True: URL 인식 강화
+            gdown.download(url, output_file, quiet=True, fuzzy=True)
         
-        # (1) 1차 접속 (쿠키 획득용)
-        response = session.get(URL, params={'id': file_id}, stream=True)
-        
-        # (2) 토큰(경고 무시용) 찾기
-        token = None
-        for key, value in response.cookies.items():
-            if key.startswith('download_warning'):
-                token = value
-                break
-        
-        # (3) 토큰이 있으면 포함해서 재요청, 없으면 그냥 진행
-        if token:
-            params = {'id': file_id, 'confirm': token}
-            response = session.get(URL, params=params, stream=True)
-        
-        # [안전장치] 만약 그래도 HTML(경고창)이 오면, 강제로 'confirm=t'를 넣어서 한 번 더 시도
-        if b"<!DOCTYPE html>" in response.content[:100]:
-             params = {'id': file_id, 'confirm': 't'}
-             response = session.get(URL, params=params, stream=True)
-
-        response.raise_for_status()
-
-        # 3. 데이터 읽기 (숫자 쉼표 제거 포함)
-        return pd.read_csv(BytesIO(response.content), 
+        # 3. 다운로드된 파일 읽기
+        return pd.read_csv(output_file, 
                            encoding='utf-8', 
                            index_col=0, 
-                           thousands=',') 
-            
+                           thousands=',') # 쉼표 자동 제거
+                           
     except Exception as e:
-        st.error(f"데이터 로드 실패: {e}")
+        st.error(f"다운로드 실패: {e}")
         return None
 
-# [중요] 함수 이름이 바뀌었으니 호출하는 곳도 바꿔야 합니다!
-# 기존: filtered_df = load_df(cluster_num)
-# 변경:
-filtered_df = load_df_v2(cluster_num)
+# =========================================================
+# [중요] 호출하는 부분도 함수 이름을 꼭 바꿔주세요!
+# =========================================================
+
+# 기존 코드: filtered_df = load_df(cluster_num)  <-- 이거 지우고
+# 아래 코드로 변경:
+filtered_df = load_df_gdown(cluster_num)
 
 if filtered_df is not None:
     st.error("🚨 KPI 데이터 긴급 점검")
@@ -407,6 +394,7 @@ with tab2:
         width='stretch'
 
     )
+
 
 
 
