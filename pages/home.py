@@ -128,12 +128,19 @@ def load_data():
 mapping_df = load_data()
 
 if mapping_df is not None:
-    target_columns = ['rpt_time_turn', 'CVR', 'CPA'] 
+    st.error("🚨 데이터 긴급 점검 (스크린샷 찍어서 보여주세요!)")
+    
+    # 1. 컬럼 이름 확인 (띄어쓰기나 대소문자 확인용)
+    st.write("### 1. 엑셀의 진짜 컬럼 이름들:")
+    st.write(mapping_df.columns.tolist()) 
 
-    for col in target_columns:
-        if col in mapping_df.columns:
-            mapping_df[col] = pd.to_numeric(mapping_df[col].astype(str).str.replace(',', ''), errors='coerce')
-            mapping_df[col] = mapping_df[col].fillna(0)
+    # 2. KPI 데이터 상태 확인 (숫자인지 문자인지)
+    st.write("### 2. KPI 컬럼 데이터 타입:")
+    st.write(mapping_df.dtypes)
+
+    # 3. 데이터 내용 미리보기
+    st.write("### 3. 데이터 상위 5줄:")
+    st.dataframe(mapping_df.head())
 
 # 3.2 session_state 및 기본값 설정
 industry = st.session_state.get('selected_industry', "음식")
@@ -361,6 +368,7 @@ with tab2:
         width='stretch'
 
     )
+
 
 
 
