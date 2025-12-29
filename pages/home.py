@@ -216,6 +216,16 @@ else:
     display_cvr = "-"
     time_turn_value = "-"
 
+try:
+    temp_val = str(time_turn_value).replace(',', '').strip()
+    
+    if temp_val == '' or temp_val in ['-', 'None', 'nan', 'NaT']:
+        safe_time_value = 0.0
+    else:
+        safe_time_value = float(temp_val)
+except:
+    safe_time_value = 0.0
+
 col1, col2, col3 = st.columns(3, gap="small")
 
 # 5.2 지표 설정
@@ -223,7 +233,7 @@ with col1:
     st.markdown(f"""
     <div class="kpi-card">
         <div class="kpi-title">TURN</div>
-        <div class="kpi-value">{float(str(time_turn_value).replace(',', '')):.2f}</div>
+        <div class="kpi-value">{safe_time_value:.2f}</div>
         <div class="kpi-sub">전환 수 평균</div>
     </div>
     """, unsafe_allow_html=True)
@@ -343,4 +353,5 @@ with tab2:
         width='stretch'
 
     )
+
 
