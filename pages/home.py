@@ -8,6 +8,8 @@ import numpy as np
 import os
 from pathlib import Path
 import altair as alt
+import requests
+from io import BytesIO
 
 
 # =============================================================================
@@ -372,6 +374,7 @@ with tab2:
         width='stretch'
 
     )
+
 
 
 
