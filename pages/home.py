@@ -220,6 +220,27 @@ def load_df(cluster_n):
 
 filtered_df = load_df(cluster_num)
 
+if filtered_df is not None:
+    st.error("🚨 KPI 데이터 긴급 점검")
+    
+    # 1. 컬럼 이름 확인 (혹시 공백이 섞여 있는지?)
+    st.write("### 1. 실제 컬럼 이름들:", filtered_df.columns.tolist())
+
+    # 2. 숫자 데이터 미리보기 (%, 쉼표, 문자 등이 섞여 있는지 확인)
+    # 확인하고 싶은 컬럼명을 아래 리스트에 적어주세요.
+    cols_to_check = ['rpt_time_turn', 'CVR', 'CPA'] 
+    
+    # 해당 컬럼이 실제로 존재하는지 체크 후 출력
+    exist_cols = [c for c in cols_to_check if c in filtered_df.columns]
+    
+    if exist_cols:
+        st.write("### 2. 데이터 샘플 (상위 5줄):")
+        st.write(filtered_df[exist_cols].head())
+        st.write("### 3. 데이터 타입:")
+        st.write(filtered_df[exist_cols].dtypes)
+    else:
+        st.warning(f"⚠️ 컬럼을 찾을 수 없습니다! 코드에 적은 이름: {cols_to_check}")
+
 # =============================================================================
 # 5. KPI
 # =============================================================================
@@ -374,6 +395,7 @@ with tab2:
         width='stretch'
 
     )
+
 
 
 
