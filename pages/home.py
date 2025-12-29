@@ -177,54 +177,60 @@ cluster_num = int(cluster_num)
 
 # 4.4 클러스터 파일 불러오기
 @st.cache_data
-def load_df(cluster_n):
-    # 1. 클러스터별 파일 ID (기존 ID 그대로 사용)
+def load_df_v2(cluster_n):
+    # 1. 파일 ID 매핑
     cluster_file_ids = {
         0: '1poNHLx01sXmQ4EtkiE2FAL3doTdug-uX',
         1: '13eitQekyZ09qQGN7j3iaEq6YFR0vO9lh',
-        2: '1Qeix85DvhQVQ5YRSa0vXRNoq_Xvmlp6Z', # 문제의 대용량 파일 (180MB)
+        2: '1Qeix85DvhQVQ5YRSa0vXRNoq_Xvmlp6Z', # 180MB 대용량 파일
         3: '1a8zYLAlXn8rXOGfASiyueRAE0FuFpxCU'
     }
     
     file_id = cluster_file_ids.get(cluster_n)
     if not file_id:
-        st.error("파일 ID가 없습니다.")
         return None
 
     try:
-        # 2. 대용량 파일 경고 우회 로직 (핵심!)
+        # 2. 다운로드 URL 설정
         URL = "https://docs.google.com/uc?export=download"
         session = requests.Session()
         
-        # (1) 접속 시도
+        # (1) 1차 접속 (쿠키 획득용)
         response = session.get(URL, params={'id': file_id}, stream=True)
         
-        # (2) '바이러스 검사 경고' 토큰 찾기
+        # (2) 토큰(경고 무시용) 찾기
         token = None
         for key, value in response.cookies.items():
             if key.startswith('download_warning'):
                 token = value
                 break
         
-        # (3) 토큰이 있으면 포함해서 진짜 다운로드 요청 ('확인' 버튼 누르는 효과)
+        # (3) 토큰이 있으면 포함해서 재요청, 없으면 그냥 진행
         if token:
             params = {'id': file_id, 'confirm': token}
             response = session.get(URL, params=params, stream=True)
-            
-        response.raise_for_status() # 에러 체크
+        
+        # [안전장치] 만약 그래도 HTML(경고창)이 오면, 강제로 'confirm=t'를 넣어서 한 번 더 시도
+        if b"<!DOCTYPE html>" in response.content[:100]:
+             params = {'id': file_id, 'confirm': 't'}
+             response = session.get(URL, params=params, stream=True)
 
-        # 3. 데이터 읽기 (쉼표 제거 기능 포함)
-        # 180MB 파일을 메모리에서 읽습니다.
+        response.raise_for_status()
+
+        # 3. 데이터 읽기 (숫자 쉼표 제거 포함)
         return pd.read_csv(BytesIO(response.content), 
                            encoding='utf-8', 
                            index_col=0, 
-                           thousands=',') # 숫자 안의 쉼표 자동 제거
-                           
+                           thousands=',') 
+            
     except Exception as e:
-        st.error(f"파일 다운로드 실패 (Cluster {cluster_n}): {e}")
+        st.error(f"데이터 로드 실패: {e}")
         return None
 
-filtered_df = load_df(cluster_num)
+# [중요] 함수 이름이 바뀌었으니 호출하는 곳도 바꿔야 합니다!
+# 기존: filtered_df = load_df(cluster_num)
+# 변경:
+filtered_df = load_df_v2(cluster_num)
 
 if filtered_df is not None:
     st.error("🚨 KPI 데이터 긴급 점검")
@@ -401,6 +407,7 @@ with tab2:
         width='stretch'
 
     )
+
 
 
 
