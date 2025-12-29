@@ -179,66 +179,34 @@ cluster_num = int(cluster_num)
 # 4.4 클러스터 파일 불러오기
 @st.cache_data
 def load_df_gdown(cluster_n):
-    # 1. 파일 ID 매핑
     cluster_file_ids = {
         0: '1poNHLx01sXmQ4EtkiE2FAL3doTdug-uX',
         1: '13eitQekyZ09qQGN7j3iaEq6YFR0vO9lh',
-        2: '1Qeix85DvhQVQ5YRSa0vXRNoq_Xvmlp6Z', # 180MB 대용량 파일
+        2: '1Qeix85DvhQVQ5YRSa0vXRNoq_Xvmlp6Z',
         3: '1a8zYLAlXn8rXOGfASiyueRAE0FuFpxCU'
     }
     
     file_id = cluster_file_ids.get(cluster_n)
     if not file_id:
         return None
-
-    # 2. gdown을 이용한 다운로드 (바이러스 경고 자동 우회)
+       
     url = f'https://drive.google.com/uc?id={file_id}'
     output_file = f'cluster_data_{cluster_n}.csv'
     
     try:
-        # 파일이 이미 있으면 다시 받지 않음 (속도 향상)
         if not os.path.exists(output_file):
             # quiet=True: 로그 출력 끄기, fuzzy=True: URL 인식 강화
             gdown.download(url, output_file, quiet=True, fuzzy=True)
-        
-        # 3. 다운로드된 파일 읽기
         return pd.read_csv(output_file, 
                            encoding='utf-8', 
                            index_col=0, 
-                           thousands=',') # 쉼표 자동 제거
+                           thousands=',')
                            
     except Exception as e:
         st.error(f"다운로드 실패: {e}")
         return None
-
-# =========================================================
-# [중요] 호출하는 부분도 함수 이름을 꼭 바꿔주세요!
-# =========================================================
-
-# 기존 코드: filtered_df = load_df(cluster_num)  <-- 이거 지우고
-# 아래 코드로 변경:
+       
 filtered_df = load_df_gdown(cluster_num)
-
-if filtered_df is not None:
-    st.error("🚨 KPI 데이터 긴급 점검")
-    
-    # 1. 컬럼 이름 확인 (혹시 공백이 섞여 있는지?)
-    st.write("### 1. 실제 컬럼 이름들:", filtered_df.columns.tolist())
-
-    # 2. 숫자 데이터 미리보기 (%, 쉼표, 문자 등이 섞여 있는지 확인)
-    # 확인하고 싶은 컬럼명을 아래 리스트에 적어주세요.
-    cols_to_check = ['rpt_time_turn', 'CVR', 'CPA'] 
-    
-    # 해당 컬럼이 실제로 존재하는지 체크 후 출력
-    exist_cols = [c for c in cols_to_check if c in filtered_df.columns]
-    
-    if exist_cols:
-        st.write("### 2. 데이터 샘플 (상위 5줄):")
-        st.write(filtered_df[exist_cols].head())
-        st.write("### 3. 데이터 타입:")
-        st.write(filtered_df[exist_cols].dtypes)
-    else:
-        st.warning(f"⚠️ 컬럼을 찾을 수 없습니다! 코드에 적은 이름: {cols_to_check}")
 
 # =============================================================================
 # 5. KPI
@@ -394,6 +362,7 @@ with tab2:
         width='stretch'
 
     )
+
 
 
 
